@@ -152,7 +152,7 @@ Initially, the Exchange will implement simple fixed-price sales, standard Englis
 
 #### Payment Tokens
 
-The Wyvern Exchange supports any ERC20-compatible token as a payment method for items, chosen by the seller at time of listing. A whitelist managed by the DAO is used to avoid malicious tokens. Frontends may allow users to pay with whichever token they wish and convert it to the seller's desired token seamlessly through protocols such as 0x[@0x].
+The Exchange supports any ERC20-compatible token as a payment method for items, chosen by the seller at time of listing. A whitelist managed by the DAO is used to avoid malicious tokens. Frontends may allow users to pay with whichever token they wish and convert it to the seller's desired token seamlessly through protocols such as 0x[@0x].
 
 #### Escrow & Dispute Resolution
 
@@ -175,7 +175,7 @@ Depending on market demand, the web frontend may implement an interface by which
 
 #### Fee Structure
 
-The Wyvern Exchange will charge a configurable net fee, to sellers, of 30 basis points (0.3%) of the item purchase price in whichever token the item is sold for.
+The Exchange will charge a configurable net fee, to sellers, of 30 basis points (0.3%) of the item purchase price in whichever token the item is sold for.
 
 This fee is split three ways evenly:
 
@@ -189,32 +189,19 @@ Frontends may elect to support affiliate links and pass part of the fee on to us
 
 Configurable fees in WYV may also be charged for item listing, bidding, and purchase as an anti-spam measure. This is implemented to provide more flexibility than relying solely on the Ethereum gas market and is not expected to provide significant revenue.
 
-<!---
 #### Upgradability
 
-Proxy contracts
-
-Extensible functionality via whitelisted delegatecalls for functions - too expensive? "Dynamic linking"
-
-Swappable interface / implementation smart contracts by DAO (optional to user). Frontend will have to abstract some of this, common SDKs will be provided (first for Javascript).
--->
-
-<!---
+The primary exchange contract, since it holds no permanent user balances, can simply be swapped out for a new version whenever a change is desired. Proxy contracts controlled by the DAO or SDK abstraction layers will ensure that a call relating to a particular item goes to the exchange contract it was listed on, making routing seamless.
 
 ### Initial Web Frontend
 
-The initial frontend provides a generic interface for item listing, browsing, purchase, and dispute resolution. It is intended as a functional proof-of-concept to be utilized by early adopters and markets particularly well-served by the capabilities of the exchange protocol.
+The initial frontend will provide a generic interface for listing, browsing, bidding, purchasing, and dispute resolution. Mass-market usability will come later - this is intended as a functional proof-of-concept to be utilized by early adopters and markets particularly well-served by the capabilities of the exchange protocol. The initial frontend will also implement a split-fee affiliate link system and provide a standard asset registry.
 
-Affiliate links instead of frontend fee.
-
-Way to list user's sellable assets; registry.
-
+<!---
 ### Initial Mobile Frontend
 
 Status.im
-
 Mobile passthrough affiliate links (e.g. can SMS)
-
 -->
 
 # Risks
