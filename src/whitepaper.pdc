@@ -42,7 +42,7 @@ The development team of that Wyvern, for their own reasons, chose not to continu
 
 The protocol will be responsible for the full exchange process and all associated state.
 
-It should:
+The protocol should:
 
 - Allow parties to list items for sale
 - Allow parties to register intent to purchase listed items
@@ -81,7 +81,7 @@ Initially, the WYV token will be used for:
 
 ### Supply
 
-Capped at 20 million. About ten percent of supply is initially allocated to the Wyvern DAO, and the remaining ninety percent is distributed according to the previous Wyvern ledger's final UTXO set. We expect token holdings to diffuse across the Ethereum userbase over time. Generating tokens to pay for network security is unnecessary, as the token is secured by Ethereum's consensus, and a capped supply provides strong incentives for early developers and evangelists.
+Capped at 2 million. A bit over five percent of supply is initially allocated to the Wyvern DAO, and the remaining ninety percent is distributed according to the previous Wyvern ledger's final UTXO set. We expect token holdings to diffuse across the Ethereum userbase over time. Generating tokens to pay for network security is unnecessary, as the token is secured by Ethereum's consensus, and a capped supply provides strong incentives for early developers and evangelists.
 
 ## The Wyvern DAO — [dao.projectwyvern.com](https://dao.projectwyvern.com)
 
@@ -109,22 +109,40 @@ Beyond the ability to change its own voting rules, the DAO is not directly self-
 
 ## The Wyvern Exchange — [exchange.projectwyvern.com](https://exchange.projectwyvern.com)
 
+### Design
+
+Let us suppose two agents interacting with a distributed ledger have utility functions preferencing certain states of that ledger over others. Aiming to maximize their utility, these agents may construct with their utility functions along with the present ledger state a mapping of state transitions (transactions) to marginal utilities. Any composite state transition with positive marginal utility for both agents and enactable by the combined permissions of both agents is a possible and mutually desirable trade, and the trustless code execution provided by a distributed ledger renders the requisite atomicity trivial.
+
+Relative to this model, the present Exchange instantation makes two concessions to practicality:
+
+- State transition preferences are not matched directly but are instead intermediated by a standard of tokenized value.
+- A small fee is charged in the token of payment, split equally between protocol development, frontend compensation, and a chosen public beneficiary.
+
 ### Protocol
 
 #### Item Specification
 
-An item is specified as the pairing of arbitrary metadata (with an IPFS pointer stored on the Ethereum chain) and a non-fungible asset, which is any asset implementing the following abstract interface:
+Specific representations of asset ownership on a distributed ledger are likely to vary, so rather than implementing a particular interface, the Exchange simply proxies transaction execution. Exchange users must grant control of whatever assets they wish to sell to an individual proxy smart contract and then sign approval of particular transactions when they wish to buy or sell an asset through the Exchange, granting the Exchange the right to execute the necessary transaction through the proxy contract. The user, of course, can transfer their assets back to themselves at any time.
+
+The proxy contract exposes the following interface:
 
 ```solidity
-function currentOwner() returns (address);
-function pendingOwner() returns (address);
-function transferOwnership(address newOwner);
-function claimOwnership();
+function proxy(uint id, address dest, bytes calldata,
+  bytes replace, uint start, uint length, uint8 v,
+  bytes32 r, bytes32 s) public returns (bool);
 ```
 
-Initially, the Exchange will implement this interface for Claimable[@claimable] contracts and ERC721 compliant tokens.
+Note the ability to modify part of the calldata - users may often wish to sign mappings of transactions to booleans rather than exact transactions (e.g. "transfer CryptoKat XYZ to any address").
 
-Specifying a NonFungibleAsset is *optional* - items with off-chain ownership settlement such as digital gift cards or game keys will not include one.
+After ensuring that the user has authorized the sender to execute the provided transaction (with a mechanism to prevent replay attacks), the proxy contract simply executes:
+
+```solidity
+dest.call(calldata)
+```
+
+This enables a very wide set of potential use-cases, such as a paying an automated bug bounty when an invariant is violated or paying anyone who can solve a hard computational problem (e.g. paying directly for Bitcoin block solutions with a smart contract), and has the added benefit of substantially reducing the attack surface of the Exchange protocol as a whole, since the Exchange contract need only be provided the requisite permissions to execute particular trades and is not required to hold assets directly.
+
+An item is specified as the pairing of arbitrary metadata (with an IPFS pointer stored on the Ethereum chain) and a transaction specification. Executing a transaction is *optional* - items with off-chain ownership settlement such as digital gift cards or game keys will not include one.
 
 #### Sale Specification
 
@@ -136,19 +154,22 @@ struct Bid {
     address bidder;
     /* Amount of the bid. */
     uint amount;
-    /* Timestamp of bid placement. */
-    uint timestamp;
 }
 
-function requiredBidPrice(SaleKind saleKind, uint basePrice, uint extra,
-  uint expirationTime, Bid currentTopBid) returns (uint minimumBid);
-function canPurchaseItem(SaleKind saleKind, uint expirationTime,
-  Bid topBid) returns (bool);
-function calculateFinalPrice(SaleKind saleKind, uint basePrice, uint extra,
-  uint listingTime, uint expirationTime, Bid topBid) returns (uint finalPrice);
+function validateParameters(SaleKind saleKind,
+  uint expirationTime) pure internal returns (bool)
+function requiredBidPrice(SaleKind saleKind,
+  uint basePrice, uint extra, uint expirationTime,
+  Bid currentTopBid) view returns (uint minimumBid);
+function canPurchaseItem(SaleKind saleKind,
+  uint expirationTime, Bid topBid) view returns (bool);
+function calculateFinalPrice(SaleKind saleKind,
+  uint basePrice, uint extra, uint listingTime,
+  uint expirationTime, Bid topBid)
+  view returns (uint finalPrice);
 ```
 
-Initially, the Exchange will implement simple fixed-price sales, standard English auctions, and standard Dutch auctions. Future algorithms should be added in accordance with market demand.
+Initially, the Exchange will implement simple fixed-price sales, standard English auctions, and standard Dutch auctions. Future pricing algorithms should be added in accordance with market demand.
 
 #### Payment Tokens
 
@@ -168,7 +189,7 @@ function releaseEscrow(bytes32 id) returns (bool);
 function disputeEscrow(bytes32 id) returns (bool);
 ```
 
-Conveniently, separating escrow from the main contract in this way drastically decreases the possible losses incurred by contract bugs, as the Exchange itself will not store user funds.
+Separating escrow from the main contract in this way also decreases the possible losses incurred by contract bugs, as the Exchange itself will not store user funds.
 
 Initially, the Exchange will implement a no-escrow provider (funds are transferred directly) and a trusted third-party (any Ethereum account) escrow provider.
 Depending on market demand, the web frontend may implement an interface by which users with public reputations can easily act as escrow providers, review buyer/seller-provided information to arbitrate disputes, and charge a small fee for their services.
@@ -187,7 +208,7 @@ Fees are collected in the exchange contract and can be withdrawn at will by thei
 
 Frontends may elect to support affiliate links and pass part of the fee on to users who help promote the frontend.
 
-Configurable fees in WYV may also be charged for item listing, bidding, and purchase as an anti-spam measure. This is implemented to provide more flexibility than relying solely on the Ethereum gas market and is not expected to provide significant revenue.
+Configurable fees in WYV may also be charged for item listing, bidding, and purchasing as an anti-spam measure. This is implemented to provide more flexibility than relying solely on the Ethereum gas market and is not expected to provide significant revenue.
 
 #### Upgradability
 
@@ -214,7 +235,7 @@ Putting control of the exchange protocol and profit from the exchange's operatio
 
 The current market capitalization of cryptocurrencies is primarily driven by speculation (whether justified or not), not application throughput. The most end-user-accessible product right now, Coinbase[@coinbase], is built primarily on a centralized technology stack and gives up most of the fundamental guarantees a distributed ledger provides (e.g., a disgruntled fiat power can analyze or seize your Coinbase account). Real-world broad-base consumer usability will require substantial improvements in both underlying distributed ledger technology and higher-level user experience abstractions and is probably years out. End user desktop and mobile applications interfacing to the exchange protocol will require such advances to feasibly compete with established centralized marketplaces.
 
-Although the most widely used smart contract platform at the moment, Ethereum has yet to surmount several critical technical hurdles, primarily in the area of network scaling. Many potential Ethereum alternatives exist: NEO[@neo], Tezos[@tezos], Cardano[@cardano], and Zen Protocol[@zenprotocol], to name just a few, all promise some form of smart contract support, and existing cryptocurrencies such as Zcash[@zcash] may implement programmability on top of their current systems[@zookotweet]. At the present early technical and economic stage, the future capabilities and market shares of particular smart contract platforms are difficult to predict. The Wyvern DAO should actively research potentially superior platforms, and, should the cost-benefit make sense, transfer or duplicate the exchange implementation as the overall ecosystem evolves and future trajectories become clearer.
+Ethereum, although the most widely used smart contract platform at the moment, has yet to surmount several critical technical hurdles, primarily in the area of network scaling. Many potential Ethereum alternatives exist: NEO[@neo], Tezos[@tezos], Cardano[@cardano], and Zen Protocol[@zenprotocol], to name just a few, all promise some form of smart contract support, and existing cryptocurrencies such as Zcash[@zcash] may implement programmability on top of their current systems[@zookotweet]. At the present early technical and economic stage, the future capabilities and market shares of particular smart contract platforms are difficult to predict. The Wyvern DAO should actively research potentially superior platforms, and, should the cost-benefit make sense, transfer or duplicate the exchange implementation as the overall ecosystem evolves and future trajectories become clearer.
 
 <!---
 
