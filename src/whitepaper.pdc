@@ -53,7 +53,7 @@ The protocol should:
 
 ## Practical Decentralized Governance
 
-The present developers will bootstrap protocol development, implement the first frontend(s), and serve a very active initial role in directing the project, but the protocol should eventually be a commonwealth, not subject to the whims and execution risks of a single team. Protocol governance, and eventually funding, should be the responsibility of a decentralized autonomous organization with incentives correctly aligned so that short-term profits funnel back into development and the long-term success of the protocol is in the best interest of the organization's shareholders. This decentralized organization must be accorded sufficient power over the protocol to execute necessary alterations over time, and must be practical and quick enough to run that it can react effectively to evolving market requirements.
+The present developers will bootstrap protocol development, implement the first frontend(s), and serve a very active initial role in directing the project, but the protocol should eventually be a commonwealth, not subject to the whims and execution risks of a single team. Protocol governance, and eventually funding, should be the responsibility of a decentralized autonomous organization with incentives correctly aligned so that the long-term success of the protocol is in the best interest of the organization's shareholders. This decentralized organization must be accorded sufficient power over the protocol to execute necessary alterations over time, and must be practical and quick enough to run that it can react effectively to evolving market requirements.
 
 ## Category Agnosticism
 
@@ -71,13 +71,12 @@ The protocol will only handle the "backend" layer of exchange. A diverse set of 
 
 The WYV token exists not as a fundraising vehicle for an ICO but rather as an attempt to create an aligned incentive structure: a mechanism to maximize the likelihood that the actions in the best immediate interests of WYV tokenholders are also in the long-term strategic interest of the Wyvern Exchange protocol, and to maximize the likelihood that external parties whose interests are aligned with the protocol's interests are the most likely to accrue substantial token holdings over time. Contrast this, for example, with the Bitcoin protocol, which we would argue currently has a misaligned incentive structure: Bitcoin holders who wish to maximize their expected return are best served by evangelizing Bitcoin's potential future status as a digital reserve currency traded primarily by existing financial institutions (in derivative contracts which involve no actual Bitcoin[@cboexbt]), not as the peer-to-peer digital cash originally envisioned in the Bitcoin whitepaper[@bitcoin].
 
-This is a complex goal. Even if the protocol itself is stable, the requirements for incentive alignment will change as the market conditions evolve. Originally, Bitcoin's incentives were much more aligned, as without functional use cases driving demand the network would likely not have achieved speculative velocity, but once speculative velocity was achieved speculation quickly took precedence as a use case due to far stronger network effects. The initial token structure ties expected token dividends to future exchange protocol revenue and requires a small amount of WYV for certain uses of the protocol (thus making it likely that end users will be exposed to the token), but the Wyvern DAO may need to make adjustments over time.
+This is a complex goal. Even if the protocol itself is stable, the requirements for incentive alignment will change as the market conditions evolve. Originally, Bitcoin's incentives were much more aligned, as without functional use cases driving demand the network would likely not have achieved speculative velocity, but once speculative velocity was achieved speculation quickly took precedence as a use case due to far stronger network effects. The initial token structure ties expected token value to future exchange protocol throughput and requires a small amount of WYV to use the protocol (thus making it likely that end users will be exposed to the token), but the Wyvern DAO may need to make adjustments over time.
 
 Initially, the WYV token will be used for:
 
-- Protocol governance: WYV tokenholders will have voting rights in the Wyvern DAO proportional to their token holdings
-- Protocol dividends: The core protocol will charge a small proportional transaction fee, paid to the Wyvern DAO in the token used to conduct the transaction, which can then be distributed as dividends or reinvested into development as the shareholders decide
-- Exchange protocol anti-spam fees: In addition to a proportional transaction fee, which is expected to make up the majority of the revenue, the Wyvern Exchange may charge a small fee in WYV for specific actions to prevent spam. This will need to be abstracted away from end-users to prevent unnecessary mental transaction costs.
+- Protocol governance: WYV tokenholders will have voting rights in the Wyvern DAO proportional to their token holdings.
+- Exchange protocol fees: The Wyvern Exchange will charge fees (probably fractions of a percent, set by the frontend) for order settlement. This will need to be abstracted away from end-users to prevent unnecessary mental transaction costs.
 
 ### Supply
 
@@ -116,7 +115,7 @@ Let us suppose two agents interacting with a distributed ledger have utility fun
 Relative to this model, the present Exchange instantation makes two concessions to practicality:
 
 - State transition preferences are not matched directly but are instead intermediated by a standard of tokenized value.
-- A small fee is charged in the token of payment, split equally between protocol development, frontend compensation, and a chosen public beneficiary.
+- A small fee is charged in WYV tokens, specified by the frontend which hosts the orderbook.
 
 ### Protocol
 
@@ -142,7 +141,7 @@ dest.call(calldata)
 
 This enables a very wide set of potential use-cases, such as a paying an automated bug bounty when an invariant is violated or paying anyone who can solve a hard computational problem (e.g. paying directly for Bitcoin block solutions with a smart contract), and has the added benefit of substantially reducing the attack surface of the Exchange protocol as a whole, since the Exchange contract need only be provided the requisite permissions to execute particular trades and is not required to hold assets directly.
 
-An item is specified as the pairing of arbitrary metadata (with an IPFS pointer stored on the Ethereum chain) and a transaction specification. Executing a transaction is *optional* - items with off-chain ownership settlement such as digital gift cards or game keys will not include one.
+An item is specified as the pairing of arbitrary metadata (with an IPFS pointer stored on the Ethereum chain) and a transaction to be executed.
 
 #### Sale Specification
 
@@ -196,19 +195,9 @@ Depending on market demand, the web frontend may implement an interface by which
 
 #### Fee Structure
 
-The Exchange will charge a configurable net fee, to sellers, of 30 basis points (0.3%) of the item purchase price in whichever token the item is sold for.
-
-This fee is split three ways evenly:
-
-- 1/3 (0.1%) to the Wyvern DAO, to fund protocol development or pay dividends to DAO shareholders as the DAO elects
-- 1/3 (0.1%) to the frontend on which the purchase was made (e.g. web interface / mobile app)
-- 1/3 (0.1%) to a specified public beneficiary, such as the Ethereum Foundation
-
-Fees are collected in the exchange contract and can be withdrawn at will by their recipients.
+The Exchange will charge a configurable fee in WYV to settle orders. This fee is configurable by the Exchange frontend. Fees are collected in the exchange contract and can be withdrawn at will by their recipients.
 
 Frontends may elect to support affiliate links and pass part of the fee on to users who help promote the frontend.
-
-Configurable fees in WYV may also be charged for item listing, bidding, and purchasing as an anti-spam measure. This is implemented to provide more flexibility than relying solely on the Ethereum gas market and is not expected to provide significant revenue.
 
 #### Upgradability
 
